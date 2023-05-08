@@ -121,32 +121,27 @@ func (c *Coordinator) ListenTimeout(taskid int, taskType TaskType) {
 		if taskType.isMap() {
 			if c.MapTaskRunning(taskid) {
 				//从活跃Map任务列表中删除并加入待办列表
+				c.mtdmutex.Lock()
 				c.mtomutex.Lock()
-				value, stillok := (*c.mapTaskOngoing)[taskid]
-				if stillok {
+
+				if value, stillok := (*c.mapTaskOngoing)[taskid]; stillok {
 					delete(*c.mapTaskOngoing, taskid)
+					(*c.mapTaskTodo)[c.GetMapTaskId()] = value
 				}
 				c.mtomutex.Unlock()
-				if stillok {
-					c.mtdmutex.Lock()
-					(*c.mapTaskTodo)[c.GetMapTaskId()] = value
-					c.mtdmutex.Unlock()
-				}
+				c.mtdmutex.Unlock()
 			}
 		} else if taskType.isReduce() {
 			if c.ReduceTaskRunning(taskid) {
 				//从活跃Reduce任务列表中删除并加入待办列表
+				c.rtdmutex.Lock()
 				c.rtomutex.Lock()
-				value, stillok := (*c.reduceTaskOngoing)[taskid]
-				if stillok {
+				if value, stillok := (*c.reduceTaskOngoing)[taskid]; stillok {
 					delete(*c.reduceTaskOngoing, taskid)
+					(*c.reduceTaskTodo)[c.GetReduceTaskId()] = value
 				}
 				c.rtomutex.Unlock()
-				if stillok {
-					c.rtdmutex.Lock()
-					(*c.reduceTaskTodo)[c.GetReduceTaskId()] = value
-					c.rtdmutex.Unlock()
-				}
+				c.rtdmutex.Unlock()
 			}
 		}
 	}

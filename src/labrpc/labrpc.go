@@ -108,8 +108,14 @@ func (e *ClientEnd) Call(svcMeth string, args interface{}, reply interface{}) bo
 
 	//
 	// wait for the reply.
-	//
-	rep := <-req.replyCh
+	// timeout handle
+	timer := time.NewTimer(time.Duration(20) * time.Millisecond)
+	var rep replyMsg
+	select {
+	case rep = <-req.replyCh:
+	case <-timer.C:
+		return false
+	}
 	if rep.ok {
 		rb := bytes.NewBuffer(rep.reply)
 		rd := labgob.NewDecoder(rb)
